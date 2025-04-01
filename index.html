@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secret Message Encoder/Decoder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6c5ce7',
+                        dark: '#2d3436',
+                        light: '#f5f6fa',
+                        success: '#00b894',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-2xl bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-primary to-purple-500 p-6 text-white">
+            <div class="flex items-center justify-between">
+                <h1 class="text-2xl font-bold flex items-center gap-2">
+                    <i class="fas fa-lock"></i>
+                    Secret Message Tool
+                </h1>
+                <span class="bg-black bg-opacity-20 px-3 py-1 rounded-full text-xs">No Tracking</span>
+            </div>
+            <p class="mt-2 text-purple-100">Encode messages into emojis/symbols or use Caesar cipher</p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="p-6">
+            <!-- Input Area -->
+            <div class="mb-6">
+                <label for="input" class="block text-gray-700 font-medium mb-2">Your Message</label>
+                <textarea 
+                    id="input" 
+                    rows="4" 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                    placeholder="Type your secret message here..."></textarea>
+            </div>
+
+            <!-- Controls -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label for="cipher" class="block text-gray-700 font-medium mb-2">Cipher Type</label>
+                    <select 
+                        id="cipher" 
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all">
+                        <option value="emoji">Emoji Cipher</option>
+                        <option value="symbol">Symbol Cipher</option>
+                        <option value="caesar">Caesar Cipher (Shift +3)</option>
+                    </select>
+                </div>
+                <div class="flex items-end gap-2">
+                    <button 
+                        onclick="encode()"
+                        class="flex-1 bg-primary hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+                        <i class="fas fa-lock"></i> Encode
+                    </button>
+                    <button 
+                        onclick="decode()"
+                        class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+                        <i class="fas fa-lock-open"></i> Decode
+                    </button>
+                </div>
+            </div>
+
+            <!-- Output Area -->
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-gray-700 font-medium">Output</label>
+                    <button 
+                        id="copyBtn"
+                        onclick="copyToClipboard()"
+                        class="text-sm bg-success hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-1">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                </div>
+                <div id="output" class="bg-gray-50 p-4 rounded-lg border-l-4 border-primary min-h-16 break-words">
+                    <p class="text-gray-500 italic">Your encoded/decoded message will appear here...</p>
+                </div>
+            </div>
+
+            <!-- Tips -->
+            <div class="mt-6 bg-blue-50 p-4 rounded-lg border border-blue-200 flex items-start gap-3">
+                <i class="fas fa-lightbulb text-blue-500 mt-1"></i>
+                <div>
+                    <h3 class="font-medium text-blue-800">Pro Tip</h3>
+                    <p class="text-blue-700 mt-1 text-sm">Press Ctrl+Enter while typing to encode instantly!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="bg-gray-100 px-6 py-4 text-center text-gray-600 text-sm flex justify-between items-center">
+            <p>100% client-side processing</p>
+            <a href="#" class="text-primary hover:underline font-medium">Support this tool</a>
+        </div>
+    </div>
+
+    <script>
+        // Complete A-Z mapping for emojis and symbols
+        const cipherMaps = {
+            emoji: {
+                'A': '🍎', 'B': '🐝', 'C': '🐱', 'D': '🐶', 'E': '🐘', 
+                'F': '🐸', 'G': '🦒', 'H': '🏠', 'I': '🍦', 'J': '🃏', 
+                'K': '👑', 'L': '🦁', 'M': '🌙', 'N': '👃', 'O': '🐙', 
+                'P': '🐧', 'Q': '👑', 'R': '🌈', 'S': '☀️', 'T': '🌴', 
+                'U': '☔', 'V': '🎻', 'W': '🍉', 'X': '❌', 'Y': '🧶', 'Z': '🦓',
+                ' ': '⬛', // Space character
+                '0': '0️⃣', '1': '1️⃣', '2': '2️⃣', '3': '3️⃣', '4': '4️⃣',
+                '5': '5️⃣', '6': '6️⃣', '7': '7️⃣', '8': '8️⃣', '9': '9️⃣',
+                '!': '❗', '?': '❓', '.': '🔘', ',': '🔷'
+            },
+            symbol: {
+                'A': '∆', 'B': '∫', 'C': '§', 'D': '∂', 'E': '€', 
+                'F': 'ƒ', 'G': '©', 'H': '™', 'I': '¶', 'J': '•', 
+                'K': '˚', 'L': '¬', 'M': 'µ', 'N': '~', 'O': 'Ω', 
+                'P': 'π', 'Q': 'œ', 'R': '®', 'S': '∑', 'T': '†', 
+                'U': '¨', 'V': '√', 'W': '∫', 'X': '≈', 'Y': '¥', 'Z': '‡',
+                ' ': ' ', // Space character
+                '0': '⓪', '1': '①', '2': '②', '3': '③', '4': '④',
+                '5': '⑤', '6': '⑥', '7': '⑦', '8': '⑧', '9': '⑨',
+                '!': '¡', '?': '¿', '.': '⋅', ',': '‚'
+            }
+        };
+
+        function encode() {
+            const text = document.getElementById("input").value.toUpperCase();
+            const cipherType = document.getElementById("cipher").value;
+            let result = "";
+
+            if (cipherType === "caesar") {
+                result = caesarCipher(text, 3);
+            } else {
+                const map = cipherMaps[cipherType];
+                for (let char of text) {
+                    result += map[char] || char;
+                }
+            }
+
+            displayOutput(result);
+        }
+
+        function decode() {
+            const text = document.getElementById("input").value;
+            const cipherType = document.getElementById("cipher").value;
+            let result = "";
+
+            if (cipherType === "caesar") {
+                result = caesarCipher(text, -3);
+            } else {
+                const map = cipherMaps[cipherType];
+                // Reverse lookup for emoji/symbol
+                const reversedMap = {};
+                for (const key in map) {
+                    reversedMap[map[key]] = key;
+                }
+
+                // Handle multi-character emojis (like ☀️)
+                let i = 0;
+                while (i < text.length) {
+                    let found = false;
+                    // Check for the longest possible match first
+                    for (let length = 4; length >= 1; length--) {
+                        const candidate = text.substr(i, length);
+                        if (reversedMap[candidate]) {
+                            result += reversedMap[candidate];
+                            i += length;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        result += text[i];
+                        i++;
+                    }
+                }
+            }
+
+            displayOutput(result);
+        }
+
+        function caesarCipher(text, shift) {
+            return text.split('').map(char => {
+                if (/[A-Z]/.test(char)) {
+                    const code = char.charCodeAt(0);
+                    let shifted = code + shift;
+                    if (shifted > 90) shifted -= 26;
+                    if (shifted < 65) shifted += 26;
+                    return String.fromCharCode(shifted);
+                }
+                return char;
+            }).join('');
+        }
+
+        function displayOutput(text) {
+            const output = document.getElementById("output");
+            if (text.trim() === "") {
+                output.innerHTML = '<p class="text-gray-500 italic">Your encoded/decoded message will appear here...</p>';
+            } else {
+                output.innerHTML = `<p class="font-mono text-lg">${text}</p>`;
+            }
+        }
+
+        function copyToClipboard() {
+            const output = document.getElementById("output");
+            const text = output.innerText;
+            const copyBtn = document.getElementById("copyBtn");
+            
+            if (text.includes("will appear here")) {
+                showFeedback(copyBtn, "Nothing to copy!", "bg-red-500");
+                return;
+            }
+
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    showFeedback(copyBtn, "Copied!", "bg-green-600");
+                })
+                .catch(err => {
+                    showFeedback(copyBtn, "Failed to copy", "bg-red-500");
+                    console.error("Copy failed:", err);
+                });
+        }
+
+        function showFeedback(button, text, bgColor) {
+            const originalHtml = button.innerHTML;
+            const originalBg = button.className.match(/bg-\w+-\d+/)[0];
+            
+            button.innerHTML = `<i class="fas fa-check mr-1"></i> ${text}`;
+            button.className = button.className.replace(originalBg, bgColor);
+            
+            setTimeout(() => {
+                button.innerHTML = originalHtml;
+                button.className = button.className.replace(bgColor, originalBg);
+            }, 2000);
+        }
+
+        // Keyboard shortcut (Ctrl+Enter to encode)
+        document.getElementById("input").addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                e.preventDefault();
+                encode();
+            }
+        });
+
+        // Clear output when input changes
+        document.getElementById("input").addEventListener('input', function() {
+            const output = document.getElementById("output");
+            if (this.value === "") {
+                output.innerHTML = '<p class="text-gray-500 italic">Your encoded/decoded message will appear here...</p>';
+            }
+        });
+    </script>
+</body>
+  </html>
